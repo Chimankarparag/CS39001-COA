@@ -13,8 +13,14 @@ module datapath (
     input  wire         immSel,
     input  wire [31:0]  imm_signed,          // sign-extended immediate
     input  wire [31:0]  jmp_signed,          // sign-extended immediate
+    
+    // Data Control Signals
+    input  wire        rdMem,
+    input  wire        wrMem,
+    input  wire        mToReg,
+    
     // Outputs
-    output wire [31:0]  alu_result_out,   // ALU result
+    output wire [31:0]  result_out,   // ALU result
     output wire [31:0]  rsOut_out,        // rs register value
     output wire         zero_flag,
     output wire         negative_flag,
@@ -26,6 +32,18 @@ module datapath (
     wire [31:0] alu_result;
     wire [31:0] imm_ext;
     wire [3:0]  dest_reg;
+    wire [31:0] rdData;
+    
+    //Data Mem
+    data_mem Data_memory(
+        .clk(clk),
+        .reset(reset),
+        .addr(alu_result),
+        .wrData(rtOut),
+        .rdMem(rdMem),
+        .wrMem(wrMem),
+        .rdData(rdData)
+    );
     
     // MUX
     assign dest_reg  = (reg_dst) ? rd_addr : rt_addr;
@@ -38,7 +56,7 @@ module datapath (
         .rs(rs_addr),
         .rt(rt_addr),
         .rd(rd_addr),
-        .rdIn(alu_result),      // Write ALU result to register
+        .rdIn(result_out),      // Write ALU result to register
         .rsOut(rsOut),
         .rtOut(rtOut)
     );
@@ -59,8 +77,11 @@ module datapath (
         .overflow_flag(overflow_flag)
     );
     
+    
     // Output assignments
-    assign alu_result_out = alu_result;
+    assign result_out = (mToReg) ? rdData : alu_result;
+    // if memory to reg -> send the memory data
+    
     assign rsOut_out      = rsOut;
     
 endmodule

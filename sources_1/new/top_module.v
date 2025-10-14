@@ -4,7 +4,7 @@ module top_module (
     input  wire         clk,
     input  wire         reset,
     input  wire [31:0]  pcIn,
-    output wire [31:0]  alu_result,       // ALU result output
+    output wire [31:0]  result_out,       // result output
     output wire [31:0]  rs_value,         // rs register value
     output wire         zero_flag,
     output wire         negative_flag,
@@ -28,6 +28,9 @@ module top_module (
     wire        wr_reg;
     wire        reg_dst;
     wire        immSel;
+    wire        rdMem;
+    wire        wrMem;
+    wire        mToReg;
     wire        updPc;
     
     program_counter pc(
@@ -59,6 +62,9 @@ module top_module (
         .immSel(immSel),
         .wr_reg(wr_reg),
         .reg_dst(reg_dst),
+        .rdMem(rdMem),        // Read from data memory
+        .wrMem(wrMem),         // Write to data memory
+        .mToReg(mToReg),
         .updPc(updPc)
     );
     
@@ -69,15 +75,22 @@ module top_module (
         .rs_addr(rs),
         .rt_addr(rt),
         .rd_addr(rd),
-        .reg_dst(reg_dst),
+        .reg_dst(reg_dst),  // control signal rd or rt
         .wr_reg(wr_reg),
+        
         .alu_control(alu_control),
         .alu_src(alu_src),
         .immSel(immSel),
         .imm_signed(imm_signed),
         .jmp_signed(jmp_signed),
-        .alu_result_out(alu_result),
+        
+        .rdMem(rdMem),        // Read from data memory
+        .wrMem(wrMem),         // Write to data memory
+        .mToReg(mToReg),
+        
+        .result_out(result_out),
         .rsOut_out(rs_value),
+        
         .zero_flag(zero_flag),
         .negative_flag(negative_flag),
         .overflow_flag(overflow_flag)

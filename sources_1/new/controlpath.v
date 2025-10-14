@@ -3,9 +3,12 @@ module controlpath (
     input  wire [5:0] funct,        // 5-bit function field from instr[4:0]
     output reg  [3:0] alu_control,  // 4-bit control to ALU wrapper
     output reg        alu_src,      // 1 => use rt, 0 => use immediate
-    output reg        immSel,
+    output reg        immSel,       // if 0 -> 16bit imm else 26bit jmp
     output reg        wr_reg,       // write register file
     output reg        reg_dst,       // 1 => rd (R-type), 0 => rt (I-type)
+    output reg        rdMem,        // Read from data memory
+    output reg        wrMem,         // Write to data memory
+    output reg        mToReg,       //  if 1 => Meomry send to register else alu_result
     output reg        updPc
 );
 
@@ -39,6 +42,9 @@ module controlpath (
         immSel      = 1'b0;
         wr_reg      = 1'b0;
         reg_dst     = 1'b0;
+        rdMem       = 1'b0;
+        wrMem       = 1'b0;
+        mToReg      = 1'b0;
         updPc       = 1'b0;
 
         case (opcode)
@@ -156,6 +162,31 @@ module controlpath (
                 immSel      = 1'b0;
                 wr_reg      = 1'b1;
                 reg_dst     = 1'b0;
+                updPc    = 1'b1;
+            end
+            
+            6'b010001: begin //LD
+                alu_control = ALU_ADD;
+                alu_src     = 1'b0;   // use immediate
+                immSel      = 1'b0;
+                wr_reg      = 1'b1;
+                reg_dst     = 1'b0;   // write to rt
+                rdMem       = 1'b1;
+                wrMem       = 1'b0;
+                mToReg      = 1'b1;
+                updPc    = 1'b1;
+                
+            end
+            
+            6'b010010: begin //SW
+                alu_control = ALU_ADD;
+                alu_src     = 1'b0;   // use immediate
+                immSel      = 1'b0;
+                wr_reg      = 1'b0;
+                reg_dst     = 1'b0;   // write to rt
+                rdMem       = 1'b0;
+                wrMem       = 1'b1;
+                mToReg      = 1'b1;
                 updPc    = 1'b1;
             end
 
