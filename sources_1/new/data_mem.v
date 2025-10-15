@@ -11,23 +11,28 @@ module data_mem(
     output reg [31:0] rdData // OUTPUT  passed to the mux
     );
     
-    reg signed [31:0] mem [0:1023];  //1024 locations
-
-    always @(posedge clk, posedge reset) begin
-        if(reset) begin
-           $readmemh("data_bram.mem", mem);   // reads hex file at simulation start
+    wire [9:0] bram_addr = addr[9:0];  
+    // FIX: Changed from 'reg' to 'wire' so it can be driven by the BRAM instance
+    wire [31:0] rdData_from_bram; 
+    
+    // reg signed [31:0] mem [0:1023];  //1024 locations
+    
+    data_bram bram_inst (
+        .clka(clk),             // Clock Input
+        .rsta(reset),
+        .addra(bram_addr),      // Address Input (A[9:0])
+        .dina(wrData),          // Write Data Input
+        .wea(wrMem),            // Write Enable Input
+        .douta(rdData_from_bram)      // Read Data Output 
+    );
+    // This logic captures the BRAM output into the final 'rdData' register, 
+    // only when the read control signal 'rdMem' is active.
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            rdData <= 32'h0; // Initialize output on reset (good practice)
         end
-        else begin
-            if(wrMem) begin
-                mem[addr[9:0]] <= wrData;
-            end
-            if(rdMem) begin
-                rdData <= mem[addr[9:0]];
-            end
+        else if (rdMem) begin
+            rdData <= rdData_from_bram; // Capture the BRAM output
         end
     end
-
-
-    
-
 endmodule
