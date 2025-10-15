@@ -33,6 +33,17 @@ module instruction_memory (
             6'd17: instruction = 32'b001110_00111_00110_0000000000000000; // DECI R6, R7
             6'd18: instruction = 32'b000001_01000_00111_1111111111111011; // ADDI R7, R8, -5
             6'd19: instruction = 32'b000001_00001_00000_0000000001100100; // ADDI R0, R1, 100
+            
+            // LOAD/STORE TEST INSTRUCTIONS (Starting from address 20)
+            6'd20: instruction = 32'b000001_00000_00001_0000000001100100; // ADDI R1, R0, 100
+            6'd21: instruction = 32'b010010_00000_00001_0000000000000100; // SW R1, 4(R0) - Store R1 to Mem[4]
+            6'd22: instruction = 32'b000001_00000_00010_0000000011001000; // ADDI R2, R0, 200
+            6'd23: instruction = 32'b010010_00000_00010_0000000000001000; // SW R2, 8(R0) - Store R2 to Mem[8]
+            6'd24: instruction = 32'b010001_00000_00011_0000000000000100; // LD R3, 4(R0) - Load Mem[4] into R3
+            6'd25: instruction = 32'b010001_00000_00100_0000000000001000; // LD R4, 8(R0) - Load Mem[8] into R4
+            6'd26: instruction = 32'b000001_00000_00101_0000000000010000; // ADDI R5, R0, 16 - Base address
+            6'd27: instruction = 32'b010010_00101_00011_0000000000000100; // SW R3, 4(R5) - Store R3 to Mem[20]
+            6'd28: instruction = 32'b010001_00101_00110_0000000000000100; // LD R6, 4(R5) - Load Mem[20] into R6
             default: instruction = 32'h00000000; // NOP
         endcase
     end
