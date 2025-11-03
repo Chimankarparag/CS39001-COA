@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+"""
+RISC-32 Assembler to Binary File Converter
+Converts assembly code to 32-bit machine code with separators.
+"""
+
 def convert_to_binary(imm, bit_count):
     # remove the first # and convert rest of the string to int
     imm = int(imm[1:len(imm)])
@@ -115,29 +121,36 @@ for counter, instr in enumerate(instructions):
     if instr[0] in Rtype:
 
         if instr[0] == "MOVE":
-            file.write("010100")
-
+            file.write("010100") # opcode
         elif instr[0] == "CMOV":
-          file.write("010101")
-
+          file.write("010101") # opcode
         else:
           file.write("000000") # opcode
+        
+        file.write("_") # SEPARATOR
 
         if instr[0] in Rtype_3reg or instr[0] == "MOVE" : # rs
             file.write(R_REG_MAPPING[instr[2]])
         else:
-            file.write("00000")
+            file.write("00000") # rs
 
+        file.write("_") # SEPARATOR
 
         if instr[0] in Rtype_3reg: # rt
             file.write(R_REG_MAPPING[instr[3]])
         else:
-            file.write(R_REG_MAPPING[instr[2]])
+            file.write(R_REG_MAPPING[instr[2]]) # rt
 
+        file.write("_") # SEPARATOR
+        
         file.write(R_REG_MAPPING[instr[1]]) # rd
 
+        file.write("_") # SEPARATOR
+        
         file.write("000000") # don't care
 
+        file.write("_") # SEPARATOR
+        
         file.write(Rtype_func_map[instr[0]]) # funct
         file.write(",")
         file.write("\n")
@@ -145,23 +158,31 @@ for counter, instr in enumerate(instructions):
     elif instr[0] in Itype:
 
         file.write(Itype_opcode_map[instr[0]]) # opcode
+        
+        file.write("_") # SEPARATOR
 
         if instr[0] in Itype_3_ri: #rs
             file.write(R_REG_MAPPING[instr[2]])
         elif instr[0] in ["BMI", "BPL", "BZ"]:
-            file.write(R_REG_MAPPING[instr[1]])
+            file.write(R_REG_MAPPING[instr[1]]) # rs
         elif instr[0] in ["LD", "ST"]:
-            file.write(R_REG_MAPPING[instr[3]])
+            file.write(R_REG_MAPPING[instr[3]]) # rs
+        else: # LUI, NOTI, INCI, DECI, HAMI
+            file.write("00000") # rs
+
+        file.write("_") # SEPARATOR
 
         if instr[0] in ["BMI", "BPL", "BZ"]: #rt
             file.write("00000")
         else:
-            file.write(R_REG_MAPPING[instr[1]])
+            file.write(R_REG_MAPPING[instr[1]]) # rt
+
+        file.write("_") # SEPARATOR
 
         if instr[0] in Itype_3_ri: #immediate
             file.write(convert_to_binary(instr[3], 16))
         else:
-            file.write(convert_to_binary(instr[2], 16))
+            file.write(convert_to_binary(instr[2], 16)) # immediate
 
         file.write(",")
         file.write("\n")
@@ -169,6 +190,9 @@ for counter, instr in enumerate(instructions):
     elif instr[0] in Jtype:
 
         file.write(Jtype_opcode_map[instr[0]]) # opcode
+        
+        file.write("_") # SEPARATOR
+        
         file.write(convert_to_binary(instr[1], 26)) # immediate
         file.write(",")
 
@@ -177,7 +201,13 @@ for counter, instr in enumerate(instructions):
     elif instr[0] in PCtype:
 
         file.write(PCtype_opcode_map[instr[0]]) # opcode
+        
+        file.write("_") # SEPARATOR
+        
         file.write("00000000000000000000000000")
         file.write(",")
 
         file.write("\n")
+
+file.close() # Close the file when done
+
