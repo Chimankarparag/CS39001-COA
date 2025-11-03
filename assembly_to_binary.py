@@ -88,8 +88,12 @@ def parse_register(reg_str):
 
 
 def parse_immediate(imm_str, bits=16):
-    """Parse immediate value and return binary representation"""
+    """Parse immediate value and return binary representation in two's complement"""
     imm_str = imm_str.strip()
+    
+    # Remove # prefix if present
+    if imm_str.startswith('#'):
+        imm_str = imm_str[1:]
     
     # Handle hexadecimal
     if imm_str.startswith('0x') or imm_str.startswith('0X'):
@@ -101,13 +105,19 @@ def parse_immediate(imm_str, bits=16):
     else:
         value = int(imm_str)
     
-    # Handle negative numbers (two's complement)
+    # Handle negative numbers using two's complement
     if value < 0:
+        # Check if negative value is in valid range
+        min_value = -(1 << (bits - 1))
+        if value < min_value:
+            raise ValueError(f"Immediate value {value} out of range for {bits}-bit two's complement (min: {min_value})")
+        # Convert to two's complement: for negative n, result is 2^bits + n
         value = (1 << bits) + value
-    
-    # Check range
-    if value >= (1 << bits):
-        raise ValueError(f"Immediate value {imm_str} out of range for {bits} bits")
+    else:
+        # Check if positive value is in valid range
+        max_value = (1 << (bits - 1)) - 1
+        if value > max_value:
+            raise ValueError(f"Immediate value {value} out of range for {bits}-bit two's complement (max: {max_value})")
     
     return format(value, f'0{bits}b')
 
@@ -148,20 +158,20 @@ def assemble_i_type(instruction, parts):
     opcode = I_TYPE_INSTRUCTIONS[instruction]
     
     if instruction in ['LD', 'ST']:
-        # Format: LD/ST rt, imm(rs)
+        # Format: LD/ST rt, #imm(rs) or LD/ST rt, imm(rs)
         if len(parts) != 2:
             raise ValueError(f"{instruction} requires 2 operands")
         rt = parse_register(parts[0])
         
-        # Parse imm(rs) format
-        match = re.match(r'(-?\d+)\s*\(\s*([^)]+)\s*\)', parts[1])
+        # Parse #imm(rs) or imm(rs) format
+        match = re.match(r'#?(-?\d+)\s*\(\s*([^)]+)\s*\)', parts[1])
         if not match:
-            raise ValueError(f"Invalid format for {instruction}: expected imm(rs)")
+            raise ValueError(f"Invalid format for {instruction}: expected #imm(rs) or imm(rs)")
         imm = parse_immediate(match.group(1), 16)
         rs = parse_register(match.group(2))
         
     elif instruction in ['BMI', 'BPL', 'BZ']:
-        # Format: BRANCH rs, imm
+        # Format: BRANCH rs, #imm or BRANCH rs, imm
         if len(parts) != 2:
             raise ValueError(f"{instruction} requires 2 operands")
         rs = parse_register(parts[0])
@@ -169,14 +179,14 @@ def assemble_i_type(instruction, parts):
         imm = parse_immediate(parts[1], 16)
         
     elif instruction in ['NOTI', 'INCI', 'DECI', 'HAMI', 'LUI']:
-        # Format: INST rt, imm
+        # Format: INST rt, #imm or INST rt, imm
         if len(parts) != 2:
             raise ValueError(f"{instruction} requires 2 operands")
         rt = parse_register(parts[0])
         rs = '00000'
         imm = parse_immediate(parts[1], 16)
     else:
-        # Format: INST rt, rs, imm
+        # Format: INST rt, rs, #imm or INST rt, rs, imm
         if len(parts) != 3:
             raise ValueError(f"{instruction} requires 3 operands")
         rt = parse_register(parts[0])
@@ -207,20 +217,45 @@ def assemble_program_control(instruction):
     return machine_code
 
 
-def assemble_line(line):
-    """Assemble a single line of assembly code"""
+def preprocess_line(line):
+    """Preprocess line to handle missing commas and clean up"""
     # Remove comments
     line = re.sub(r'[;#].*$', '', line)
     line = line.strip()
+    
+    if not line:
+        return None
+    
+    # Fix missing comma before # (e.g., "SLI R7, R7 #1" -> "SLI R7, R7, #1")
+    # This pattern looks for: register followed by space and # without comma
+    line = re.sub(r'(R\d+)\s+(#)', r'\1, \2', line)
+    
+    return line
+
+
+def assemble_line(line):
+    """Assemble a single line of assembly code"""
+    line = preprocess_line(line)
     
     # Skip empty lines
     if not line:
         return None
     
-    # Split instruction and operands
-    parts = re.split(r'[\s,]+', line)
-    instruction = parts[0].upper()
-    operands = [op.strip() for op in parts[1:] if op.strip()]
+    # Split instruction and operands more carefully
+    # First, split by whitespace to get instruction
+    tokens = line.split(None, 1)
+    if not tokens:
+        return None
+    
+    instruction = tokens[0].upper()
+    
+    # Parse operands by splitting on commas
+    if len(tokens) > 1:
+        operands_str = tokens[1]
+        # Split by comma and clean up each operand
+        operands = [op.strip() for op in operands_str.split(',') if op.strip()]
+    else:
+        operands = []
     
     # Assemble based on instruction type
     if instruction in R_TYPE_INSTRUCTIONS:
@@ -273,14 +308,42 @@ def assemble_to_coe(assembly_code, output_file=None):
 
 # Example usage
 if __name__ == "__main__":
-    # Example assembly code
+    # Example assembly code from user
     example_assembly = """
-    ADDI R1, R0, 10
-    ADDI R2, R0, 20
-    ADD R3, R1, R2
-    ST R3, 0(R0)
-    LD R4, 0(R0)
-    HALT
+LD R10, #0(R0)
+ADDI R11, R0, #1
+BZ R10, #31
+MOVE R1, R10
+MOVE R2, R11
+ADDI R3, R0, #32
+MOVE R7, R2
+ANDI R7, R7, #1
+SLI R7, R7 #1
+OR R7, R7, R6
+BZ R7, #10
+SUBI R7, R7, #1
+BZ R7, #5
+SUBI R7, R7, #1
+BZ R7, #5
+SUBI R7, R7, #1
+BZ R7, #4
+ADD R4, R4, R1
+BR #2
+SUB R4, R4, R1
+MOVE R7, R4
+ANDI R7, R7, #1
+SLI R7, R7, #31
+MOVE R6, R2
+ANDI R6, R6, #1
+SRLI R2, R2, #1
+OR R2, R2, R7
+SRAI R4, R4, #1
+SUBI R3, R3, #1
+BPL R3, #-23
+MOVE R11, R2
+SUBI R10, R10, #1
+BR #-30
+HALT
     """
     
     if len(sys.argv) > 1:
@@ -294,8 +357,6 @@ if __name__ == "__main__":
         assemble_to_coe(assembly_code, output_file)
     else:
         # Use example
-        print("Example assembly code:")
-        print(example_assembly)
-        print("\nGenerated COE file:")
+        print("Assembling example code...")
         print(assemble_to_coe(example_assembly))
         print("\nUsage: python assembler.py <input.asm> [output.coe]")
