@@ -1,34 +1,28 @@
-LD R10, #0(R0)
-ADDI R11, R0, #1
-BZ R10, #31
-MOVE R1, R10
-MOVE R2, R11
-ADDI R3, R0, #32
-MOVE R7, R2
-ANDI R7, R7, #1
-SLI R7, R7 #1
-OR R7, R7, R6
-BZ R7, #10
-SUBI R7, R7, #1
-BZ R7, #5
-SUBI R7, R7, #1
-BZ R7, #5
-SUBI R7, R7, #1
-BZ R7, #4
-ADD R4, R4, R1
-BR #2
-SUB R4, R4, R1
-MOVE R7, R4
-ANDI R7, R7, #1
-SLI R7, R7, #31
-MOVE R6, R2
-ANDI R6, R6, #1
-SRLI R2, R2, #1
-OR R2, R2, R7
-SRAI R4, R4, #1
-SUBI R3, R3, #1
-BPL R3, #-23
-MOVE R11, R2
-SUBI R10, R10, #1
-BR #-30
+ADDI R1, R0, #1     
+SLTI R4, R1, #10        
+BZ R4, #15             
+LD R3, #0(R1)         
+SUBI R2, R1, #1        
+BMI R2, #8              
+LD R5, #0(R2)          
+SLT R4, R3, R5          
+BZ R4, #5              
+ADDI R6, R2, #1         
+ST R5, #0(R6)          
+SUBI R2, R2, #1         
+BR #-7                
+ADDI R6, R2, #1         
+ST R3, #0(R6)          
+ADDI R1, R1, #1         
+BR #-15             
+LD R1, #0(R0)          
+LD R2, #1(R0)          
+LD R3, #2(R0)         
+LD R4, #3(R0)
+LD R5, #4(R0)          
+LD R6, #5(R0)          
+LD R7, #6(R0)          
+LD R8, #7(R0)         
+LD R9, #8(R0)        
+LD R10, #9(R0)         
 HALT

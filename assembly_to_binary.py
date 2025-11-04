@@ -28,12 +28,11 @@ Rtype_func_map = {
     "INC": "01101",
     "DEC": "01110",
     "HAM": "01111",
-    "MOVE": "10000",
-    "CMOV": "10001"
+    "CMOV": "00000"
 }
 
-Itype = ["ADDI", "SUBI", "ANDI", "ORI", "XORI", "NORI", "SLI", "SRLI", "SRAI", "SLTI", "SGTI", "NOTI", "INCI", "DECI", "HAMI", "LUI", "LD", "ST", "BMI", "BPL", "BZ"]
-Itype_3_ri = ["ADDI", "SUBI", "ANDI", "ORI", "XORI", "NORI", "SLI", "SRLI", "SRAI", "SLTI", "SGTI"]
+Itype = ["ADDI", "SUBI", "ANDI", "ORI", "XORI", "NORI", "SLI", "SRLI", "SRAI", "SLTI", "SGTI", "NOTI", "INCI", "DECI", "HAMI", "LUI", "LD", "ST", "BMI", "BPL", "BZ", "MOVE"]
+Itype_3_ri = ["ADDI", "SUBI", "ANDI", "ORI", "XORI", "NORI", "SLI", "SRLI", "SRAI", "SLTI", "SGTI", "MOVE"]
 
 Itype_opcode_map = {
     "ADDI": "000001",
@@ -56,7 +55,8 @@ Itype_opcode_map = {
     "ST": "010010",
     "BMI": "100001",
     "BPL": "100010",
-    "BZ": "100011"
+    "BZ": "100011",
+    "MOVE": "010100"
 }
 
 Jtype = ["BR"]
@@ -102,10 +102,11 @@ for line in lines:
     # removing leading and trailing whitespace and remove newline characters and split the line into a list of words separating by commas and spaces
     instructions.append(line.strip().replace(",", " ").split())
 
-file = open("binary_memidx.txt", "w") # file to write the binary instructions to be understood by the processor
+file_sep = open("binary_memidx.txt", "w") # file with separators
+file_coe = open("output.coe", "w") # file without separators (.coe format)
 
 
-Rtype = ["ADD", "SUB", "AND", "OR", "XOR", "NOR", "SL", "SRL", "SRA", "SLT", "SGT", "NOT", "INC", "DEC", "HAM", "MOVE", "CMOV"]
+Rtype = ["ADD", "SUB", "AND", "OR", "XOR", "NOR", "SL", "SRL", "SRA", "SLT", "SGT", "NOT", "INC", "DEC", "HAM", "CMOV"]
 Rtype_3reg = ["ADD", "SUB", "AND", "OR", "XOR", "NOR", "SL", "SRL", "SRA", "SLT", "SGT", "CMOV"]
 
 for counter, instr in enumerate(instructions):
@@ -118,96 +119,99 @@ for counter, instr in enumerate(instructions):
         instr[2] = imm
         instr.append(reg)
 
+    binary_instruction = ""
+
     if instr[0] in Rtype:
 
-        if instr[0] == "MOVE":
-            file.write("010100") # opcode
-        elif instr[0] == "CMOV":
-          file.write("010101") # opcode
+        if instr[0] == "CMOV":
+            binary_instruction += "010101" # opcode
         else:
-          file.write("000000") # opcode
+            binary_instruction += "000000" # opcode
         
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
 
-        if instr[0] in Rtype_3reg or instr[0] == "MOVE" : # rs
-            file.write(R_REG_MAPPING[instr[2]])
+        if instr[0] in Rtype_3reg: # rs
+            binary_instruction += R_REG_MAPPING[instr[2]]
         else:
-            file.write("00000") # rs
+            binary_instruction += "00000" # rs
 
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
 
         if instr[0] in Rtype_3reg: # rt
-            file.write(R_REG_MAPPING[instr[3]])
+            binary_instruction += R_REG_MAPPING[instr[3]]
         else:
-            file.write(R_REG_MAPPING[instr[2]]) # rt
+            binary_instruction += R_REG_MAPPING[instr[2]] # rt
 
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
         
-        file.write(R_REG_MAPPING[instr[1]]) # rd
+        binary_instruction += R_REG_MAPPING[instr[1]] # rd
 
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
         
-        file.write("000000") # don't care
+        binary_instruction += "000000" # don't care
 
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
         
-        file.write(Rtype_func_map[instr[0]]) # funct
-        file.write(",")
-        file.write("\n")
+        binary_instruction += Rtype_func_map[instr[0]] # funct
 
     elif instr[0] in Itype:
 
-        file.write(Itype_opcode_map[instr[0]]) # opcode
+        binary_instruction += Itype_opcode_map[instr[0]] # opcode
         
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
 
         if instr[0] in Itype_3_ri: #rs
-            file.write(R_REG_MAPPING[instr[2]])
+            binary_instruction += R_REG_MAPPING[instr[2]]
         elif instr[0] in ["BMI", "BPL", "BZ"]:
-            file.write(R_REG_MAPPING[instr[1]]) # rs
+            binary_instruction += R_REG_MAPPING[instr[1]] # rs
         elif instr[0] in ["LD", "ST"]:
-            file.write(R_REG_MAPPING[instr[3]]) # rs
+            binary_instruction += R_REG_MAPPING[instr[3]] # rs
         else: # LUI, NOTI, INCI, DECI, HAMI
-            file.write("00000") # rs
+            binary_instruction += "00000" # rs
 
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
 
         if instr[0] in ["BMI", "BPL", "BZ"]: #rt
-            file.write("00000")
+            binary_instruction += "00000"
         else:
-            file.write(R_REG_MAPPING[instr[1]]) # rt
+            binary_instruction += R_REG_MAPPING[instr[1]] # rt
 
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
 
         if instr[0] in Itype_3_ri: #immediate
-            file.write(convert_to_binary(instr[3], 16))
+            if instr[0] == "MOVE":
+                binary_instruction += "0000000000000000" # 16-bit zero immediate for MOVE
+            else:
+                binary_instruction += convert_to_binary(instr[3], 16)
         else:
-            file.write(convert_to_binary(instr[2], 16)) # immediate
-
-        file.write(",")
-        file.write("\n")
+            binary_instruction += convert_to_binary(instr[2], 16) # immediate
 
     elif instr[0] in Jtype:
 
-        file.write(Jtype_opcode_map[instr[0]]) # opcode
+        binary_instruction += Jtype_opcode_map[instr[0]] # opcode
         
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
         
-        file.write(convert_to_binary(instr[1], 26)) # immediate
-        file.write(",")
-
-        file.write("\n")
+        binary_instruction += convert_to_binary(instr[1], 26) # immediate
 
     elif instr[0] in PCtype:
 
-        file.write(PCtype_opcode_map[instr[0]]) # opcode
+        binary_instruction += PCtype_opcode_map[instr[0]] # opcode
         
-        file.write("_") # SEPARATOR
+        binary_instruction += "_" # SEPARATOR
         
-        file.write("00000000000000000000000000")
-        file.write(",")
+        binary_instruction += "00000000000000000000000000"
 
-        file.write("\n")
+    # Write to file with separators
+    file_sep.write(binary_instruction)
+    file_sep.write(",")
+    file_sep.write("\n")
 
-file.close() # Close the file when done
+    # Write to .coe file without separators
+    binary_no_sep = binary_instruction.replace("_", "")
+    file_coe.write(binary_no_sep)
+    file_coe.write(",")
+    file_coe.write("\n")
 
+file_sep.close() # Close the file when done
+file_coe.close() # Close the .coe file when done
