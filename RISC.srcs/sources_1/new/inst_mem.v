@@ -40,7 +40,7 @@ module instruction_memory (
     wire [25:0] jmp = instruction[25:0];
     
     assign imm_signed = {{16{imm[15]}}, imm};
-    assign jmp_signed = {6'b0, jmp};
+    assign jmp_signed = {{6{jmp[25]}}, jmp};
     
     assign rs = rs_5bit[3:0];
     assign rt = rt_5bit[3:0];

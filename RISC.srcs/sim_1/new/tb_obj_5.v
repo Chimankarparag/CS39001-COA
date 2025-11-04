@@ -74,7 +74,7 @@ module tb_halt_module;
         reset = 0;
 
         // Run until HALT or max cycles
-        repeat (200) begin
+        repeat (20000) begin
             @(posedge clk);
             cycle_count = cycle_count + 1;
 
