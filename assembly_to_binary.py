@@ -13,22 +13,22 @@ def convert_to_binary(imm, bit_count):
     return format(imm, f"0{bit_count}b")
 
 Rtype_func_map = {
-    "ADD": "00001",
-    "SUB": "00010",
-    "AND": "00011",
-    "OR": "00100",
-    "XOR": "00101",
-    "NOR": "00110",
-    "SL": "00111",
-    "SRL": "01000",
-    "SRA": "01001",
-    "SLT": "01010",
-    "SGT": "01011",
-    "NOT": "01100",
-    "INC": "01101",
-    "DEC": "01110",
-    "HAM": "01111",
-    "CMOV": "00000"
+    "ADD": "000001",
+    "SUB": "000010",
+    "AND": "000011",
+    "OR": "000100",
+    "XOR": "000101",
+    "NOR": "000110",
+    "SL": "000111",
+    "SRL": "001000",
+    "SRA": "001001",
+    "SLT": "001010",
+    "SGT": "001011",
+    "NOT": "001100",
+    "INC": "001101",
+    "DEC": "001110",
+    "HAM": "001111",
+    "CMOV": "000000"
 }
 
 Itype = ["ADDI", "SUBI", "ANDI", "ORI", "XORI", "NORI", "SLI", "SRLI", "SRAI", "SLTI", "SGTI", "NOTI", "INCI", "DECI", "HAMI", "LUI", "LD", "ST", "BMI", "BPL", "BZ", "MOVE"]
@@ -148,7 +148,7 @@ for counter, instr in enumerate(instructions):
 
         binary_instruction += "_" # SEPARATOR
         
-        binary_instruction += "000000" # don't care
+        binary_instruction += "00000" # don't care
 
         binary_instruction += "_" # SEPARATOR
         
